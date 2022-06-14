@@ -11,8 +11,8 @@ import json
 # API keyws that yous saved earlier
 def authent():
     
-    
-    json_ = json.loads('twit.json')
+    with open('twit.json', 'r') as j:
+         json_ = json.loads(j.read())
     api_key = json_["api_key"]
     api_secrets = json_["secret_key"]
     access_token = json_["access_token"]
@@ -32,4 +32,4 @@ def authent():
         raise "Fin du script"
         
 if __name__=="__main__":
-    authent()
+    print(authent())
