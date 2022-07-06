@@ -9,6 +9,9 @@ import authentification as aut
 import pandas as pd
 from tqdm import tqdm
 from datetime import datetime
+from geopy.exc import GeocoderTimedOut
+from geopy.geocoders import Nominatim
+from datetime import date
 
 def transform_time(dic):
     dic['created_at'] = datetime.strptime(dic['created_at'],
@@ -26,10 +29,11 @@ def lire_tweet(name=None, screen_name=None, id = None):
     elif id:
         trump_tweets = a.user_timeline(id=id,tweet_mode='extended')
     else:
-        raise "merci d'identifier"
+        raise "merci d'identifier le compte à explorer"
     df_ret = pd.DataFrame(columns=ls_output)
     for i in tqdm(trump_tweets):
         js = i._json
+        print(js.keys())
         js_new = {key:js[key] for key in ls_output}
         js_farany = transform_time(js_new)
         del js, js_new
@@ -42,7 +46,37 @@ def get_text(id):
     status = a.get_status(id, tweet_mode='extended') 
     return status.full_text
 
+def geo(nom):
+    geolocator = Nominatim(user_agent="your_app_name")
+    loc = geolocator.geocode(nom)
+    return loc.latitude,loc.longitude
+
+def search():
+    api = aut.authent()
+    for tanana in ["Madagascar"]:
+        
+        lat, long = geo(tanana)
+        # places = api.geo_search(query=tanana, granularity="city")
+        # place_id = places[0].id
+        g = str(lat) + ',' + str(long) + ',' + '40mi'
+        print(g)
+        tweets = api.search_tweets(q="telma", count=100)
+        print(tweets)
+        for tweet in tweets:
+            print (tweet.text + " | " + tweet.place.name if tweet.place else "Undefined place")
+
 if __name__=="__main__":
-    name = input("entrer le nom du personne ou page à lire son tweet\n")
-    data = lire_tweet(screen_name=name).head(8)
+    res = pd.DataFrame()
+    ls = ['airtel_mdg', 'orange_mg','blueline_MG']
+    filtre = ['voix','sms','data','mo','minute','second','heur','mn','4G','5G','ar','ariary','ttc','bonus','go','profitez']
+    #name = input("entrer le nom du personne ou page à lire son tweet\n")
+    for l in ls:
+        data = lire_tweet(id=l)
+        data['operateur']=l
+        res = res.append(data, ignore_index=True)
+    da = str(date.today())
+    res1 = res[res['full_text'].str.contains('|'.join(filtre))]
+    res2 = res1[res1['created_at'].apply(lambda x : x.year)>=2022]
+    res2.to_excel(r'D:\Utilisateurs\Zo11\Desktop\tweet_'+da+'.xlsx')
+    search()
     
